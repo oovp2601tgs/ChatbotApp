@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -100,18 +101,23 @@ class Seller {
     private final FoodCategory category;
     private final double rating;
     private final double distanceKm;
+    private final double lat;
+    private final double lng;
     private int currentQueueCount;
     private boolean isBusy;
     private List<MenuItem> menu;
     private List<SpecialOffer> promotions;
     private SellerWindow window;
 
-    public Seller(String id, String name, FoodCategory category, double rating, double distanceKm) {
+    public Seller(String id, String name, FoodCategory category, double rating, double distanceKm,
+                   double lat, double lng) {
         this.id = id;
         this.name = name;
         this.category = category;
         this.rating = rating;
         this.distanceKm = distanceKm;
+        this.lat = lat;
+        this.lng = lng;
         this.menu = new ArrayList<>();
         this.promotions = new ArrayList<>();
         this.currentQueueCount = 0;
@@ -131,6 +137,8 @@ class Seller {
     public FoodCategory getCategory() { return category; }
     public double getRating() { return rating; }
     public double getDistanceKm() { return distanceKm; }
+    public double getLat() { return lat; }
+    public double getLng() { return lng; }
     public List<MenuItem> getMenu() { return menu; }
     public List<SpecialOffer> getPromotions() { return promotions; }
     public int getCurrentQueueCount() { return currentQueueCount; }
@@ -261,6 +269,12 @@ class Order {
     public void updateStatus(OrderStatus newStatus) {
         this.status = newStatus;
         if (newStatus == OrderStatus.BUSY) estimatedMinutes += 20;
+        
+        // Add to history when completed
+        if (newStatus == OrderStatus.COMPLETED) {
+            OrderHistoryManager.addCompletedOrder(this);
+        }
+        
         listeners.forEach(l -> l.onStatusChanged(this));
     }
 
@@ -418,7 +432,7 @@ class MultiStoreSystem {
 
     private void initSellers() {
         // ---- PADANG ----
-        Seller padang = new Seller("S001", "Warung Padang Sederhana", FoodCategory.PADANG, 4.7, 0.3);
+        Seller padang = new Seller("S001", "Warung Padang Sederhana", FoodCategory.PADANG, 4.7, 0.3, -6.06042450727696, 107.11927167171862);
         padang.getMenu().add(new MenuItem("S001-1", "Nasi Rendang", 18000, 4.8, 40, "food",
             "spicy", "savory", "beef", "indonesian", "padang", "nasi", "rice"));
         padang.getMenu().add(new MenuItem("S001-2", "Nasi Ayam Bakar", 17000, 4.6, 35, "food",
@@ -436,7 +450,7 @@ class MultiStoreSystem {
         sellers.add(padang);
 
         // ---- KOREAN ----
-        Seller korean = new Seller("S002", "Korean Street Food", FoodCategory.KOREAN, 4.6, 1.2);
+        Seller korean = new Seller("S002", "Korean Street Food", FoodCategory.KOREAN, 4.6, 1.2, -6.281181190579693, 107.1702099366738);
         korean.getMenu().add(new MenuItem("S002-1", "Tteokbokki", 25000, 4.7, 20, "food",
             "spicy", "sweet", "korean", "street food", "rice cake"));
         korean.getMenu().add(new MenuItem("S002-2", "Korean Fried Chicken", 35000, 4.8, 25, "food",
@@ -455,7 +469,7 @@ class MultiStoreSystem {
         sellers.add(korean);
 
         // ---- FAST FOOD ----
-        Seller fast = new Seller("S003", "Burger & Pasta Station", FoodCategory.FASTFOOD, 4.4, 0.9);
+        Seller fast = new Seller("S003", "Burger & Pasta Station", FoodCategory.FASTFOOD, 4.4, 0.9, -6.282143627317266, 107.17607760794165);
         fast.getMenu().add(new MenuItem("S003-1", "Beef Burger", 28000, 4.5, 12, "food",
             "savory", "beef", "burger", "western", "cheese", "fast"));
         fast.getMenu().add(new MenuItem("S003-2", "Chicken Burger", 25000, 4.4, 10, "food",
@@ -474,7 +488,7 @@ class MultiStoreSystem {
         sellers.add(fast);
 
         // ---- HEALTHY ----
-        Seller healthy = new Seller("S004", "Green Bowl & Salad", FoodCategory.HEALTHY, 4.8, 1.5);
+        Seller healthy = new Seller("S004", "Green Bowl & Salad", FoodCategory.HEALTHY, 4.8, 1.5, -6.294563719538023, 107.1664932375457);
         healthy.getMenu().add(new MenuItem("S004-1", "Quinoa Buddha Bowl", 35000, 4.9, 15, "food",
             "healthy", "vegetarian", "quinoa", "vegetables", "fresh", "organic"));
         healthy.getMenu().add(new MenuItem("S004-2", "Avocado Toast", 28000, 4.7, 8, "food",
@@ -487,7 +501,7 @@ class MultiStoreSystem {
         sellers.add(healthy);
 
         // ---- WARTEG ----
-        Seller warteg = new Seller("S005", "Warteg Bahagia", FoodCategory.WARTEG, 4.3, 0.2);
+        Seller warteg = new Seller("S005", "Warteg Bahagia", FoodCategory.WARTEG, 4.3, 0.2, -6.281666946346757, 107.16368150905166);
         warteg.getMenu().add(new MenuItem("S005-1", "Nasi Goreng", 15000, 4.5, 20, "food",
             "savory", "fried", "rice", "indonesian", "nasi", "cheap", "egg"));
         warteg.getMenu().add(new MenuItem("S005-2", "Nasi Goreng Seafood", 18000, 4.6, 25, "food",
@@ -506,7 +520,7 @@ class MultiStoreSystem {
         sellers.add(warteg);
 
         // ---- DESSERT ----
-        Seller dessert = new Seller("S006", "Sweet Dessert House", FoodCategory.DESSERT, 4.9, 1.5);
+        Seller dessert = new Seller("S006", "Sweet Dessert House", FoodCategory.DESSERT, 4.9, 1.5, -6.297940068328937, 107.16611183569414);
         dessert.getMenu().add(new MenuItem("S006-1", "Chocolate Lava Cake", 35000, 4.9, 20, "dessert",
             "sweet", "chocolate", "cake", "warm", "rich"));
         dessert.getMenu().add(new MenuItem("S006-2", "Tiramisu", 30000, 4.8, 15, "dessert",
@@ -519,7 +533,7 @@ class MultiStoreSystem {
         sellers.add(dessert);
 
         // ---- DRINKS ----
-        Seller drinks = new Seller("S007", "Warung Es Teh Indonesia", FoodCategory.DRINKS, 4.7, 0.5);
+        Seller drinks = new Seller("S007", "Warung Es Teh Indonesia", FoodCategory.DRINKS, 4.7, 0.5, -6.297843680583663, 107.16217405179022);
         drinks.getMenu().add(new MenuItem("S007-1", "Es Teh Manis", 5000, 4.7, 5, "drink",
             "sweet", "ice", "cold", "tea", "indonesian", "cheap", "refreshing"));
         drinks.getMenu().add(new MenuItem("S007-2", "Es Jeruk", 8000, 4.6, 5, "drink",
@@ -601,6 +615,193 @@ class MultiStoreSystem {
 }
 
 // ===============================
+// ORDER HISTORY MANAGER
+// ===============================
+
+class OrderHistoryManager {
+    private static final List<Order> completedOrders = new ArrayList<>();
+    private static final List<OrderHistoryListener> listeners = new ArrayList<>();
+
+    public static void addCompletedOrder(Order order) {
+        completedOrders.add(order);
+        notifyListeners();
+    }
+
+    public static List<Order> getCompletedOrders() {
+        return new ArrayList<>(completedOrders);
+    }
+
+    public static void addListener(OrderHistoryListener listener) {
+        listeners.add(listener);
+    }
+
+    private static void notifyListeners() {
+        for (OrderHistoryListener l : listeners) {
+            l.onOrderHistoryChanged();
+        }
+    }
+}
+
+interface OrderHistoryListener {
+    void onOrderHistoryChanged();
+}
+
+// ===============================
+// SIMPLE MAP WINDOW
+// ===============================
+
+class SimpleMapWindow extends JFrame {
+    public SimpleMapWindow(Order order) {
+        setTitle("🗺️ Delivery Map - " + order.getOrderId());
+        setSize(700, 600);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(30, 30, 46));
+        header.setBorder(BorderFactory.createEmptyBorder(12, 18, 12, 18));
+
+        JLabel title = new JLabel("🗺️ Delivery Route");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(Color.WHITE);
+
+        header.add(title, BorderLayout.WEST);
+
+        // Map canvas
+        MapCanvas mapCanvas = new MapCanvas(order);
+
+        // Info panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        JLabel fromLabel = new JLabel("📍 From: " + order.getSeller().getName());
+        fromLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        
+        JLabel toLabel = new JLabel("🏠 To: " + order.getAddress());
+        toLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        JLabel distLabel = new JLabel("📏 Distance: ~" + 
+            String.format("%.1f", order.getSeller().getDistanceKm()) + " km");
+        distLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        JLabel customerLabel = new JLabel("👤 " + order.getCustomerName() + "  📞 " + order.getPhone());
+        customerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        customerLabel.setForeground(Color.GRAY);
+
+        infoPanel.add(fromLabel);
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        infoPanel.add(toLabel);
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        infoPanel.add(distLabel);
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        infoPanel.add(customerLabel);
+
+        add(header, BorderLayout.NORTH);
+        add(mapCanvas, BorderLayout.CENTER);
+        add(infoPanel, BorderLayout.SOUTH);
+
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+}
+
+class MapCanvas extends JPanel {
+    private final Order order;
+    private static final int MARKER_SIZE = 20;
+
+    public MapCanvas(Order order) {
+        this.order = order;
+        setBackground(new Color(230, 240, 255));
+        setPreferredSize(new Dimension(600, 400));
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int width = getWidth();
+        int height = getHeight();
+
+        // Draw grid (map background)
+        g2d.setColor(new Color(200, 220, 240));
+        for (int i = 0; i < width; i += 30) {
+            g2d.drawLine(i, 0, i, height);
+        }
+        for (int i = 0; i < height; i += 30) {
+            g2d.drawLine(0, i, width, i);
+        }
+
+        // Calculate positions
+        // Seller (start) - left side
+        int sellerX = width / 4;
+        int sellerY = height / 2;
+
+        // Customer (destination) - right side, offset based on distance
+        double distance = order.getSeller().getDistanceKm();
+        int offsetX = (int)(Math.min(distance * 40, width / 2.5));
+        int offsetY = (int)((Math.random() - 0.5) * 80); // slight vertical variation
+        int customerX = sellerX + offsetX;
+        int customerY = sellerY + offsetY;
+
+        // Draw route line
+        g2d.setColor(new Color(33, 150, 243));
+        g2d.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 
+            0, new float[]{10, 5}, 0));
+        g2d.drawLine(sellerX, sellerY, customerX, customerY);
+
+        // Draw seller marker (orange)
+        drawMarker(g2d, sellerX, sellerY, new Color(255, 152, 0), "🏪");
+        g2d.setColor(new Color(50, 50, 80));
+        g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        g2d.drawString(order.getSeller().getName(), sellerX - 40, sellerY + MARKER_SIZE + 18);
+
+        // Draw customer marker (green)
+        drawMarker(g2d, customerX, customerY, new Color(76, 175, 80), "🏠");
+        g2d.setColor(new Color(50, 50, 80));
+        g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        
+        // Split long addresses
+        String addr = order.getAddress();
+        if (addr.length() > 25) addr = addr.substring(0, 22) + "...";
+        g2d.drawString(addr, customerX - 40, customerY + MARKER_SIZE + 18);
+
+        // Draw distance label on route
+        int midX = (sellerX + customerX) / 2;
+        int midY = (sellerY + customerY) / 2 - 10;
+        g2d.setColor(Color.WHITE);
+        g2d.fillRoundRect(midX - 35, midY - 12, 70, 24, 8, 8);
+        g2d.setColor(new Color(33, 150, 243));
+        g2d.drawRoundRect(midX - 35, midY - 12, 70, 24, 8, 8);
+        g2d.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        g2d.drawString(String.format("%.1f km", distance), midX - 25, midY + 4);
+    }
+
+    private void drawMarker(Graphics2D g2d, int x, int y, Color color, String emoji) {
+        // Draw shadow
+        g2d.setColor(new Color(0, 0, 0, 30));
+        g2d.fillOval(x - MARKER_SIZE/2 + 2, y - MARKER_SIZE/2 + 2, MARKER_SIZE, MARKER_SIZE);
+
+        // Draw marker circle
+        g2d.setColor(color);
+        g2d.fillOval(x - MARKER_SIZE/2, y - MARKER_SIZE/2, MARKER_SIZE, MARKER_SIZE);
+        
+        // Draw border
+        g2d.setColor(color.darker());
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawOval(x - MARKER_SIZE/2, y - MARKER_SIZE/2, MARKER_SIZE, MARKER_SIZE);
+
+        // Draw emoji
+        g2d.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        g2d.drawString(emoji, x - 7, y + 5);
+    }
+}
+
+// ===============================
 // SELLER WINDOW
 // ===============================
 
@@ -653,6 +854,8 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
         JButton busyBtn = new JButton("⏳ Toggle Busy");
         busyBtn.setBackground(new Color(255, 152, 0));
         busyBtn.setForeground(Color.WHITE);
+        busyBtn.setOpaque(true);
+        busyBtn.setBorderPainted(false);
         busyBtn.setFocusPainted(false);
         busyBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         busyBtn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
@@ -673,6 +876,8 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
         JButton promoBtn = new JButton("🎁 Send Promo");
         promoBtn.setBackground(new Color(156, 39, 176));
         promoBtn.setForeground(Color.WHITE);
+        promoBtn.setOpaque(true);
+        promoBtn.setBorderPainted(false);
         promoBtn.setFocusPainted(false);
         promoBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         promoBtn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
@@ -766,6 +971,8 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
         JButton msgBtn = new JButton("💬 Send");
         msgBtn.setBackground(new Color(33, 150, 243));
         msgBtn.setForeground(Color.WHITE);
+        msgBtn.setOpaque(true);
+        msgBtn.setBorderPainted(false);
         msgBtn.setFocusPainted(false);
         msgBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         msgBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
@@ -886,12 +1093,14 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
             {"🚚 Driver On Way", "0,188,212"},
             {"✔️ Complete", "76,175,80"},
             {"⏳ Busy", "255,87,34"},
-            {"❌ Reject", "244,67,54"}
+            {"❌ Reject", "244,67,54"},
+            {"🗺️ Map", "120,120,120"}
         };
         OrderStatus[] statuses = {
             OrderStatus.ACCEPTED, OrderStatus.ON_PROCESS,
             OrderStatus.DRIVER_ON_WAY, OrderStatus.COMPLETED,
-            OrderStatus.BUSY, OrderStatus.REJECTED
+            OrderStatus.BUSY, OrderStatus.REJECTED,
+            null  // Map button has no status
         };
 
         for (int i = 0; i < btnDefs.length; i++) {
@@ -904,6 +1113,8 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
             JButton btn = new JButton(def[0]);
             btn.setBackground(btnColor);
             btn.setForeground(Color.WHITE);
+            btn.setOpaque(true);
+            btn.setBorderPainted(false);
             btn.setFocusPainted(false);
             btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
             btn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -911,10 +1122,15 @@ class SellerWindow extends JFrame implements OrderStatusListener, ChatListener {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
             btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             btn.addActionListener(e -> {
-                order.updateStatus(target);
-                statusLbl.setText(order.getStatus().displayName);
-                statusLbl.setForeground(order.getStatus().color);
-                chatBridge.sendOrderUpdate(order);
+                if (target != null) {
+                    order.updateStatus(target);
+                    statusLbl.setText(order.getStatus().displayName);
+                    statusLbl.setForeground(order.getStatus().color);
+                    chatBridge.sendOrderUpdate(order);
+                } else {
+                    // Map button clicked
+                    new SimpleMapWindow(order);
+                }
             });
 
             buttons.add(btn);
@@ -1153,16 +1369,29 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         cartTotalLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         cartTotalLbl.setForeground(new Color(100, 220, 100));
 
+        JButton historyBtn = new JButton("📜 History");
+        historyBtn.setBackground(new Color(156, 39, 176));
+        historyBtn.setForeground(Color.WHITE);
+        historyBtn.setOpaque(true);
+        historyBtn.setBorderPainted(false);
+        historyBtn.setFocusPainted(false);
+        historyBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        historyBtn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
+        historyBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        historyBtn.addActionListener(e -> new OrderHistoryWindow());
+
         JButton sellerBtn = new JButton("🏪 Browse Sellers");
         sellerBtn.setBackground(new Color(33, 150, 243));
         sellerBtn.setForeground(Color.WHITE);
+        sellerBtn.setOpaque(true);
+        sellerBtn.setBorderPainted(false);
         sellerBtn.setFocusPainted(false);
         sellerBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         sellerBtn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
         sellerBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         sellerBtn.addActionListener(e -> showSellerBrowser());
 
-        right.add(cartCountLbl); right.add(cartTotalLbl); right.add(sellerBtn);
+        right.add(cartCountLbl); right.add(cartTotalLbl); right.add(historyBtn); right.add(sellerBtn);
         header.add(left, BorderLayout.WEST);
         header.add(right, BorderLayout.EAST);
         return header;
@@ -1186,6 +1415,7 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             pill.setFont(new Font("Segoe UI", Font.BOLD, 10));
             pill.setBackground(pillBg);
             pill.setForeground(pillFg);
+            pill.setOpaque(true);
             pill.setFocusPainted(false);
             pill.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(pillFg.darker(), 1),
@@ -1245,7 +1475,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             JButton qb = new JButton(quickBtns[i]);
             qb.setFont(new Font("Segoe UI", Font.PLAIN, 11));
             qb.setBackground(new Color(240, 240, 252));
-            qb.setForeground(new Color(60, 60, 100));
+            qb.setForeground(new Color(30, 30, 120));
+            qb.setOpaque(true);
             qb.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 225)),
                 BorderFactory.createEmptyBorder(4, 10, 4, 10)));
@@ -1269,6 +1500,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         JButton sendBtn = new JButton("📤 Send");
         sendBtn.setBackground(new Color(33, 150, 243));
         sendBtn.setForeground(Color.WHITE);
+        sendBtn.setOpaque(true);
+        sendBtn.setBorderPainted(false);
         sendBtn.setFocusPainted(false);
         sendBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         sendBtn.setBorder(BorderFactory.createEmptyBorder(9, 20, 9, 20));
@@ -1596,7 +1829,7 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         card.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(215, 215, 230)),
             BorderFactory.createEmptyBorder(14, 14, 14, 14)));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Category color stripe
@@ -1639,6 +1872,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         JButton addBtn = new JButton("+ Cart");
         addBtn.setBackground(new Color(33, 150, 243));
         addBtn.setForeground(Color.WHITE);
+        addBtn.setOpaque(true);
+        addBtn.setBorderPainted(false);
         addBtn.setFocusPainted(false);
         addBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         addBtn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
@@ -1650,18 +1885,41 @@ class BuyerChatWindow extends JFrame implements ChatListener {
 
         JButton sellerBtn = new JButton("🏪 Seller");
         sellerBtn.setBackground(new Color(245, 245, 252));
-        sellerBtn.setForeground(new Color(60, 60, 100));
+        sellerBtn.setForeground(new Color(30, 30, 120));
+        sellerBtn.setOpaque(true);
         sellerBtn.setFocusPainted(false);
-        sellerBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        sellerBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         sellerBtn.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 225)),
             BorderFactory.createEmptyBorder(5, 12, 5, 12)));
         sellerBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         sellerBtn.addActionListener(e -> openSellerWindow(si.seller));
 
+        JButton mapsBtn = new JButton("\uD83D\uDDFA Maps");
+        mapsBtn.setBackground(new Color(33, 150, 243));
+        mapsBtn.setForeground(Color.WHITE);
+        mapsBtn.setOpaque(true);
+        mapsBtn.setBorderPainted(false);
+        mapsBtn.setFocusPainted(false);
+        mapsBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        mapsBtn.setBorder(BorderFactory.createEmptyBorder(6, 13, 6, 13));
+        mapsBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        double _lat = si.seller.getLat();
+        double _lng = si.seller.getLng();
+        mapsBtn.addActionListener(e -> {
+            try {
+                String url = "https://www.google.com/maps?q=" + _lat + "," + _lng + "&z=16&t=m";
+                Desktop.getDesktop().browse(new URI(url));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Cannot open map: " + ex.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
         btnPanel.add(addBtn);
-        btnPanel.add(Box.createRigidArea(new Dimension(0, 6)));
+        btnPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         btnPanel.add(sellerBtn);
+        btnPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        btnPanel.add(mapsBtn);
 
         card.add(stripe, BorderLayout.WEST);
         card.add(info, BorderLayout.CENTER);
@@ -1710,6 +1968,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         JButton addBtn = new JButton("<html><center>🎁 Add<br>to Cart</center></html>");
         addBtn.setBackground(new Color(255, 152, 0));
         addBtn.setForeground(Color.WHITE);
+        addBtn.setOpaque(true);
+        addBtn.setBorderPainted(false);
         addBtn.setFocusPainted(false);
         addBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         addBtn.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
@@ -1792,6 +2052,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             JButton open = new JButton(s.getWindow() != null && s.getWindow().isVisible() ? "🔍 Focus" : "▶ Open");
             open.setBackground(new Color(33, 150, 243));
             open.setForeground(Color.WHITE);
+            open.setOpaque(true);
+            open.setBorderPainted(false);
             open.setFocusPainted(false);
             open.setFont(new Font("Segoe UI", Font.BOLD, 11));
             open.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
@@ -1889,6 +2151,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             JButton checkout = new JButton("💳 Checkout");
             checkout.setBackground(new Color(76, 175, 80));
             checkout.setForeground(Color.WHITE);
+            checkout.setOpaque(true);
+            checkout.setBorderPainted(false);
             checkout.setFont(new Font("Segoe UI", Font.BOLD, 14));
             checkout.setBorder(BorderFactory.createEmptyBorder(13, 0, 13, 0));
             checkout.setFocusPainted(false);
@@ -2002,7 +2266,6 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL; gbc.insets = new Insets(8, 4, 8, 4);
 
-        Font labelFont = new Font("Segoe UI", Font.BOLD, 12);
         Font fieldFont = new Font("Segoe UI", Font.PLAIN, 13);
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
@@ -2042,6 +2305,28 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             seller.getName(), seller.getCategoryDisplay(), seller.getEstimatedWaitTime(), cart.getTotal()));
         sumLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         summary.add(sumLbl, BorderLayout.CENTER);
+
+        JButton checkoutMapBtn = new JButton("<html><center>\uD83D\uDDFA View on<br>Google Maps</center></html>");
+        checkoutMapBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        checkoutMapBtn.setBackground(new Color(33, 150, 243));
+        checkoutMapBtn.setForeground(Color.WHITE);
+        checkoutMapBtn.setOpaque(true);
+        checkoutMapBtn.setBorderPainted(false);
+        checkoutMapBtn.setFocusPainted(false);
+        checkoutMapBtn.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+        checkoutMapBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        double _cLat = seller.getLat();
+        double _cLng = seller.getLng();
+        checkoutMapBtn.addActionListener(e -> {
+            try {
+                String url = "https://www.google.com/maps?q=" + _cLat + "," + _cLng + "&z=16&t=m";
+                Desktop.getDesktop().browse(new URI(url));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Cannot open map: " + ex.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        summary.add(checkoutMapBtn, BorderLayout.EAST);
+
         form.add(summary, gbc);
 
         dlg.add(form, BorderLayout.CENTER);
@@ -2053,6 +2338,8 @@ class BuyerChatWindow extends JFrame implements ChatListener {
         JButton place = new JButton("🚀 Place Order");
         place.setBackground(new Color(76, 175, 80));
         place.setForeground(Color.WHITE);
+        place.setOpaque(true);
+        place.setBorderPainted(false);
         place.setFocusPainted(false);
         place.setFont(new Font("Segoe UI", Font.BOLD, 13));
         place.setBorder(BorderFactory.createEmptyBorder(9, 18, 9, 18));
@@ -2096,4 +2383,165 @@ class BuyerChatWindow extends JFrame implements ChatListener {
             v.setValue(v.getMaximum());
         });
     }
+// ===============================
+// ORDER HISTORY WINDOW
+// ===============================
+
+class OrderHistoryWindow extends JFrame implements OrderHistoryListener {
+    private JPanel historyContainer;
+
+    public OrderHistoryWindow() {
+        setTitle("📜 Order History");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(30, 30, 46));
+        header.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
+        JLabel title = new JLabel("📜 Order History");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(Color.WHITE);
+
+        JLabel subtitle = new JLabel(OrderHistoryManager.getCompletedOrders().size() + " completed orders");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(new Color(180, 180, 200));
+
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        leftPanel.setOpaque(false);
+        leftPanel.add(title);
+        leftPanel.add(subtitle);
+
+        header.add(leftPanel, BorderLayout.WEST);
+
+        // History container
+        historyContainer = new JPanel();
+        historyContainer.setLayout(new BoxLayout(historyContainer, BoxLayout.Y_AXIS));
+        historyContainer.setBackground(new Color(245, 245, 250));
+        historyContainer.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        JScrollPane scroll = new JScrollPane(historyContainer);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        add(header, BorderLayout.NORTH);
+        add(scroll, BorderLayout.CENTER);
+
+        refreshHistory();
+        OrderHistoryManager.addListener(this);
+
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void refreshHistory() {
+        historyContainer.removeAll();
+
+        List<Order> orders = OrderHistoryManager.getCompletedOrders();
+        if (orders.isEmpty()) {
+            JPanel empty = new JPanel();
+            empty.setOpaque(false);
+            JLabel lbl = new JLabel("<html><center>📭<br><br>No completed orders yet</center></html>");
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            lbl.setForeground(Color.GRAY);
+            empty.add(lbl);
+            historyContainer.add(empty);
+        } else {
+            // Show newest first
+            List<Order> reversed = new ArrayList<>(orders);
+            java.util.Collections.reverse(reversed);
+            
+            for (Order order : reversed) {
+                historyContainer.add(createHistoryCard(order));
+                historyContainer.add(Box.createRigidArea(new Dimension(0, 10)));
+            }
+        }
+
+        historyContainer.revalidate();
+        historyContainer.repaint();
+    }
+
+    private JPanel createHistoryCard(Order order) {
+        JPanel card = new JPanel(new BorderLayout(12, 0));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 220, 200), 2),
+            BorderFactory.createEmptyBorder(15, 18, 15, 18)));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel info = new JPanel();
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.setOpaque(false);
+
+        JLabel orderId = new JLabel("✔️ " + order.getOrderId() + "  •  " + order.getFormattedTime());
+        orderId.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        orderId.setForeground(new Color(50, 150, 50));
+
+        JLabel seller = new JLabel("🏪 " + order.getSeller().getName());
+        seller.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        JLabel customer = new JLabel("👤 " + order.getCustomerName() + "  📞 " + order.getPhone());
+        customer.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JLabel addr = new JLabel("📍 " + order.getAddress());
+        addr.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        addr.setForeground(Color.GRAY);
+
+        StringBuilder itemsText = new StringBuilder();
+        for (CartItem ci : order.getItems()) {
+            itemsText.append(ci.getSellerItem().item.getName())
+                .append(" x").append(ci.getQuantity()).append(", ");
+        }
+        if (itemsText.length() > 2) itemsText.setLength(itemsText.length() - 2);
+        JLabel items = new JLabel("🍽️ " + itemsText.toString());
+        items.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        JLabel total = new JLabel("💰 Rp " + String.format("%,d", order.getSubtotal()));
+        total.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        total.setForeground(new Color(0, 120, 0));
+
+        info.add(orderId);
+        info.add(Box.createRigidArea(new Dimension(0, 3)));
+        info.add(seller);
+        info.add(Box.createRigidArea(new Dimension(0, 2)));
+        info.add(customer);
+        info.add(Box.createRigidArea(new Dimension(0, 2)));
+        info.add(addr);
+        info.add(Box.createRigidArea(new Dimension(0, 4)));
+        info.add(items);
+        info.add(Box.createRigidArea(new Dimension(0, 3)));
+        info.add(total);
+
+        JButton mapBtn = new JButton("🗺️ View on Map");
+        mapBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        mapBtn.setBackground(new Color(33, 150, 243));
+        mapBtn.setForeground(Color.WHITE);
+        mapBtn.setOpaque(true);
+        mapBtn.setBorderPainted(false);
+        mapBtn.setFocusPainted(false);
+        mapBtn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
+        mapBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        mapBtn.addActionListener(e -> showMapForOrder(order));
+
+        card.add(info, BorderLayout.CENTER);
+        card.add(mapBtn, BorderLayout.EAST);
+
+        return card;
+    }
+
+    private void showMapForOrder(Order order) {
+        new SimpleMapWindow(order);
+    }
+
+    @Override
+    public void onOrderHistoryChanged() {
+        SwingUtilities.invokeLater(this::refreshHistory);
+    }
+}
+
+
+
 }
